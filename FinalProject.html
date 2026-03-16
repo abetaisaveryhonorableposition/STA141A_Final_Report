@@ -7839,7 +7839,9 @@ a.anchor-link {
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
 <p>The dataset we are working with contains a database of 1.88 million wildfires that occurred in the U.S. from 1992 to 2015. This database comes from the national Fire Program Analysis (FPA) system and the full dataset contains 39 variables, with our sample containing 100,000 observations.</p>
 <p>Each observation in the core set is one wildfire event that contains elements such as GPS data for ignition location, size of the fire, and discovery date.</p>
-<p>Most recorded fires tend to be small, so if we modeled them all together that would skew the data towards small fires and we would not be able to focus on meaningfully large fires.   We will therefore focus our attention on notable fires, which we define as having a final burned area of larger than 300 acres.  When then aggregate the categorical data into the temporal panel over the spatial data.  Using this aggregated data, we'll compare a logistic regression model against XGBoost.</p>
+<p>Most recorded fires tend to be small, so if we modeled them all together that would skew the data towards small fires and we would not be able to focus on meaningfully large fires.   We will therefore focus our attention on notable fires, which we define as having a final burned area of larger than 300 acres.  When then aggregate the categorical data into the temporal panel over the spatial data.</p>
+<p>This project develops predictive model for wildfires incidence in the United States using the aforementioned data.  Our exploratory data analysis shows how wildfire activity is concentrated in the Western Coastal, Northwestern, Southeastern, and some Southern areas of the United States.  It also shows clear seasonal patterns over the course of a year, as well as increased incidence in relation to recent fires. Two approaches to modeling were attempted:  a more linear, logistic regression model and a non-linear decision tree model known as XGBoost.  To prevent data leakage, we used time aware cross validation, with area under the curve ROC (AUC) as our primary metric.</p>
+<p>AUC values revealed that XGBoost showed consistently better performance across all validation years.  These results suggest that for something like wildfire incidence, which must take time and location into account, as well as recent incidents, a nonlinear approach is best.</p>
 </div>
 </div>
 </div>
@@ -9939,7 +9941,18 @@ AUABiAQABf4fWz3DaRtQoZAAAAAASUVORK5CYII=" width="420"/>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>We created several history based predictors within each grid cell.  This includes notable fires that happened about 12 months earlier as well as 3 month and 12 month rolling totals for frequency and fire size.  These rolling variables are only based on past months and do not include predictive information like next month's counts.</p>
+<p>Recent incidence of wildfires can also provide information about risk in the short term.  For this reason we constructed variables that would capture a lagged and rolling effect of fire activity in the recent past. This includes notable fires that happened about 12 months earlier as well as 3 month and 12 month rolling totals for frequency and fire size.  These rolling variables are only based on past months and do not include predictive information like next month's counts.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="jp-Cell jp-MarkdownCell jp-Notebook-cell" id="cell-id=b8810a93-1ff6-472c-8e4d-0e6c338895b7">
+<div class="jp-Cell-inputWrapper" tabindex="0">
+<div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
+</div>
+<div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
+</div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
+<h3 id="Dataset-Summary-Table">Dataset Summary Table<a class="anchor-link" href="#Dataset-Summary-Table">¶</a></h3>
 </div>
 </div>
 </div>
@@ -10546,7 +10559,8 @@ IRJFZShEoqgMhUgUlaEQiaIy1P8B64/lrqQQrLQAAAAASUVORK5CYII=" width="420"/>
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<h1 id="3.-Modeling">3. Modeling<a class="anchor-link" href="#3.-Modeling">¶</a></h1><p>For modeling, we will keep the previously stated predictors, and convert the outcome variable fire_next_month into a categorical variable so that the model will treat it as a binary outcome (fire vs. no fire).  As previously stated, each observation represents this outcome for a single grid cell/month pair.  Spatial location predictors are lat_bin, lon_bin and state, while temporal predictors are month_sin, month_cos and year.  Rolling variables include summaries of recent fire activities such as fire_lag12, fire_roll3, fire_roll12, size_roll3, and size_roll12.</p>
+<h1 id="3.-Modeling">3. Modeling<a class="anchor-link" href="#3.-Modeling">¶</a></h1><p>Our exploratory data analysis shows that there are strong spatial patterns in wildfire incidence, as well as seasonal cycling.  We also saw some prediction patterns that coincided with recent fire activity. This encourages the use of predictors that incorporate geography, seasonal data, and lagged fire activity.</p>
+<p>For modeling, we will keep the previously stated predictors, and convert the outcome variable fire_next_month into a categorical variable so that the model will treat it as a binary outcome (fire vs. no fire).  As previously stated, each observation represents this outcome for a single grid cell/month pair.  Spatial location predictors are lat_bin, lon_bin and state, while temporal predictors are month_sin, month_cos and year.  Rolling variables include summaries of recent fire activities such as fire_lag12, fire_roll3, fire_roll12, size_roll3, and size_roll12.</p>
 </div>
 </div>
 </div>
@@ -10614,7 +10628,7 @@ $ size_roll12     <span class="ansi-black-intense-fg">&lt;dbl&gt;</span> 0<span 
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Using our curated data, we build a logistic regression model, the gradient decision tree model (XGBoost) suggested by the instructors.  We also used time-aware cross validation rather than random train-test splitting because our wildfire data is temporal.  If we used random splits, we could mix future observations into the training set and cause data leakage, since the model could learn from data that occurs later in time.  So instead, models are trained on all preceding years and then evaluated on the following year.  Logistic regression serves as our baseline to estimate coefficients once per fold and then compute AUC, while XGBoost is a more complicated process, building boosted decision trees within each fold over multiple rounds.</p>
+<p>Using our curated data, we build a logistic regression model, the gradient decision tree model (XGBoost) suggested by the instructors.  We also used time-aware cross validation rather than random train-test splitting because our wildfire data is temporal.  If we used random splits, we could mix future observations into the training set and cause data leakage, since the model could learn from data that occurs later in time.  So instead, models are trained on all preceding years and then evaluated on the following year.  The area under the ROC curve (AUC) was used as our metric to compare the two models.  Logistic regression serves as our baseline to estimate coefficients once per fold and then compute AUC, while XGBoost is a more complicated process, building boosted decision trees within each fold over multiple rounds.</p>
 </div>
 </div>
 </div>
@@ -10623,7 +10637,7 @@ $ size_roll12     <span class="ansi-black-intense-fg">&lt;dbl&gt;</span> 0<span 
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [49]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [53]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-r"><pre><span></span><span class="n">years_sorted</span><span class="w"> </span><span class="o">&lt;-</span><span class="w"> </span><span class="nf">sort</span><span class="p">(</span><span class="nf">unique</span><span class="p">(</span><span class="n">model_df</span><span class="o">$</span><span class="n">year</span><span class="p">))</span>
@@ -10701,26 +10715,26 @@ $ size_roll12     <span class="ansi-black-intense-fg">&lt;dbl&gt;</span> 0<span 
 <tr><th scope="col">&lt;dbl&gt;</th><th scope="col">&lt;dbl&gt;</th><th scope="col">&lt;dbl&gt;</th><th scope="col">&lt;dbl&gt;</th></tr>
 </thead>
 <tbody>
-<tr><td>1994</td><td>1995</td><td>0.6724591</td><td>0.7814720</td></tr>
-<tr><td>1995</td><td>1996</td><td>0.7189820</td><td>0.8183135</td></tr>
-<tr><td>1996</td><td>1997</td><td>0.7925032</td><td>0.8320717</td></tr>
-<tr><td>1997</td><td>1998</td><td>0.7601058</td><td>0.8024130</td></tr>
-<tr><td>1998</td><td>1999</td><td>0.6656930</td><td>0.7195804</td></tr>
-<tr><td>1999</td><td>2000</td><td>0.7268648</td><td>0.8184107</td></tr>
-<tr><td>2000</td><td>2001</td><td>0.7540398</td><td>0.8242491</td></tr>
-<tr><td>2001</td><td>2002</td><td>0.7236125</td><td>0.7905172</td></tr>
-<tr><td>2002</td><td>2003</td><td>0.7299050</td><td>0.8070456</td></tr>
-<tr><td>2003</td><td>2004</td><td>0.6626703</td><td>0.8250301</td></tr>
-<tr><td>2004</td><td>2005</td><td>0.6652689</td><td>0.7738344</td></tr>
-<tr><td>2005</td><td>2006</td><td>0.6620220</td><td>0.7236908</td></tr>
-<tr><td>2006</td><td>2007</td><td>0.6472107</td><td>0.7429439</td></tr>
-<tr><td>2007</td><td>2008</td><td>0.6146882</td><td>0.7582196</td></tr>
-<tr><td>2008</td><td>2009</td><td>0.6781104</td><td>0.7868651</td></tr>
-<tr><td>2009</td><td>2010</td><td>0.6544932</td><td>0.7020704</td></tr>
-<tr><td>2010</td><td>2011</td><td>0.6601589</td><td>0.7245837</td></tr>
-<tr><td>2011</td><td>2012</td><td>0.6376618</td><td>0.7051512</td></tr>
-<tr><td>2012</td><td>2013</td><td>0.6975489</td><td>0.8024398</td></tr>
-<tr><td>2013</td><td>2014</td><td>0.7382704</td><td>0.8429589</td></tr>
+<tr><td>1994</td><td>1995</td><td>0.6724591</td><td>0.7846537</td></tr>
+<tr><td>1995</td><td>1996</td><td>0.7189820</td><td>0.8191473</td></tr>
+<tr><td>1996</td><td>1997</td><td>0.7925032</td><td>0.8270017</td></tr>
+<tr><td>1997</td><td>1998</td><td>0.7601058</td><td>0.8285830</td></tr>
+<tr><td>1998</td><td>1999</td><td>0.6656930</td><td>0.7122292</td></tr>
+<tr><td>1999</td><td>2000</td><td>0.7268648</td><td>0.8129933</td></tr>
+<tr><td>2000</td><td>2001</td><td>0.7540398</td><td>0.8237241</td></tr>
+<tr><td>2001</td><td>2002</td><td>0.7236125</td><td>0.8081852</td></tr>
+<tr><td>2002</td><td>2003</td><td>0.7299050</td><td>0.8140915</td></tr>
+<tr><td>2003</td><td>2004</td><td>0.6626703</td><td>0.8243113</td></tr>
+<tr><td>2004</td><td>2005</td><td>0.6652689</td><td>0.7761487</td></tr>
+<tr><td>2005</td><td>2006</td><td>0.6620220</td><td>0.7209796</td></tr>
+<tr><td>2006</td><td>2007</td><td>0.6472107</td><td>0.7433084</td></tr>
+<tr><td>2007</td><td>2008</td><td>0.6146882</td><td>0.7547079</td></tr>
+<tr><td>2008</td><td>2009</td><td>0.6781104</td><td>0.7972655</td></tr>
+<tr><td>2009</td><td>2010</td><td>0.6544932</td><td>0.7185610</td></tr>
+<tr><td>2010</td><td>2011</td><td>0.6601589</td><td>0.7483108</td></tr>
+<tr><td>2011</td><td>2012</td><td>0.6376618</td><td>0.7047545</td></tr>
+<tr><td>2012</td><td>2013</td><td>0.6975489</td><td>0.8185578</td></tr>
+<tr><td>2013</td><td>2014</td><td>0.7382704</td><td>0.8346229</td></tr>
 </tbody>
 </table>
 </div>
